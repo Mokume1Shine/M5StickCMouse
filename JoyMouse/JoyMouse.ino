@@ -12,11 +12,13 @@ BleMouse bleMouse;
 //BleMouse.moveの引数がsingned charのため
 signed char mouse_x;
 signed char mouse_y;
-int mouse_senseX=15,mouse_senseY=30; //マウス感度
+int mouse_senseX=20,mouse_senseY=30; //マウス感度
 float mouse_min=400;  //水平判定しきい値
 float accX,accY,accZ;
 int8_t joyX,joyY,joyB;
 int8_t pressB,releaseB;
+
+bool lock=false,pLockButton=false;
 
 void setup() {
   M5.begin();
@@ -57,6 +59,12 @@ void loop() {
   if(abs(accY*1000)>mouse_min){
     mouse_y=accY*mouse_senseY;
   }
+
+  if(lock){
+    mouse_x=0;
+    mouse_y=0;
+  }
+  
   if(abs(joyX)>=5)mouse_x+=map(joyX,-110,110,-10,10);
   if(abs(joyY)>=5)mouse_y+=map(joyY,-110,110,10,-10);
   bleMouse.move(mouse_x,mouse_y);
@@ -69,21 +77,54 @@ void loop() {
   }else{
     releaseB|=MOUSE_LEFT;
   }
-  if(M5.BtnA.isPressed() || M5.BtnB.isPressed()){
+  if(M5.BtnA.isPressed()){
     pressB|=MOUSE_RIGHT;
   }else{
     releaseB|=MOUSE_RIGHT;
   }
   if(pressB!=0)bleMouse.press(pressB);
   if(releaseB!=0)bleMouse.release(releaseB);
+  if(M5.BtnB.isPressed() && !pLockButton){
+    lock=!lock;
+  }
+  pLockButton=M5.BtnB.isPressed();
+
+  float vbat=M5.Axp.GetBatVoltage();
+  float cbat=M5.Axp.GetBatCurrent();
 
   M5.Lcd.startWrite();
-  canvas.pushImage(73,76,UnlockWidth,UnlockHeight,Unlock);
-  canvas.pushImage(26,80,LeftButtonWidth,LeftButtonHeight,LeftButton);
-  canvas.pushImage(42,80,RightButtonWidth,RightButtonHeight,RightButton);
-  canvas.pushImage(8,137,BatteryWidth,BatteryHeight,Battery);
+  canvas.fillRect(0,0,80,160,BLACK);
+  canvas.drawRect(10,10,60,60,WHITE);
+  canvas.fillRect(40,40,2,2,WHITE);
+  canvas.fillRect(40+mouse_x-1,40+mouse_y-1,4,4,0xFC40);
+  
+  if(lock){
+    canvas.pushImage(73,76,LockWidth,LockHeight,Lock);
+  }else{
+    canvas.pushImage(73,76,UnlockWidth,UnlockHeight,Unlock);
+  }
+  if(bleMouse.isPressed(MOUSE_LEFT)){
+    canvas.pushImage(26,80,LeftClickedWidth,LeftClickedHeight,LeftClicked);
+  }else{
+    canvas.pushImage(26,80,LeftButtonWidth,LeftButtonHeight,LeftButton);
+  }
+  if(bleMouse.isPressed(MOUSE_RIGHT)){
+    canvas.pushImage(42,80,RightClickedWidth,RightClickedHeight,RightClicked);
+  }else{
+    canvas.pushImage(42,80,RightButtonWidth,RightButtonHeight,RightButton);
+  }
+  canvas.pushImage(26,106,MouseBottomWidth,MouseBottomHeight,MouseBottom);
+  
+  canvas.pushImage(9,138,BatteryWidth,BatteryHeight,Battery);
+  if(cbat>=0){
+    canvas.pushImage(0,142,PlugLeftWidth,PlugLeftHeight,PlugLeft);
+    canvas.pushImage(76,142,PlugRightWidth,PlugRightHeight,PlugRight);
+  }
+
+  canvas.fillRect(12,141,(int16_t)constrain(map(vbat*100.0,310,390,0,57),0,57),10,WHITE);
+  
   canvas.pushSprite(0,0);
   M5.Lcd.endWrite();
   
-  delay(33);
+  delay(10);
 }
