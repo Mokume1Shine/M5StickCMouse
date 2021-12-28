@@ -2,8 +2,11 @@
 #include <BleMouse.h>
 #include <M5StickC.h>
 #include <Wire.h>
+#include "images.h"
 
 #define JOY_ADDR 0x38
+
+TFT_eSprite canvas=TFT_eSprite(&M5.lcd);
 
 BleMouse bleMouse;
 //BleMouse.moveの引数がsingned charのため
@@ -29,6 +32,9 @@ void setup() {
   Wire.begin(0, 26, 100000);
 
   M5.Axp.ScreenBreath(10);
+  M5.Lcd.setSwapBytes(true);
+  canvas.createSprite(M5.Lcd.width(),M5.Lcd.height());
+  canvas.setSwapBytes(false);
 }
 
 void loop() {
@@ -70,6 +76,14 @@ void loop() {
   }
   if(pressB!=0)bleMouse.press(pressB);
   if(releaseB!=0)bleMouse.release(releaseB);
+
+  M5.Lcd.startWrite();
+  canvas.pushImage(73,76,UnlockWidth,UnlockHeight,Unlock);
+  canvas.pushImage(26,80,LeftButtonWidth,LeftButtonHeight,LeftButton);
+  canvas.pushImage(42,80,RightButtonWidth,RightButtonHeight,RightButton);
+  canvas.pushImage(8,137,BatteryWidth,BatteryHeight,Battery);
+  canvas.pushSprite(0,0);
+  M5.Lcd.endWrite();
   
   delay(33);
 }
