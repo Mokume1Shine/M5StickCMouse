@@ -13,26 +13,35 @@ BleMouse bleMouse;
 signed char mouse_x;
 signed char mouse_y;
 int mouse_senseX=20,mouse_senseY=30; //マウス感度
-float mouse_min=400;  //水平判定しきい値
-float accX,accY,accZ;
-int8_t joyX,joyY,joyB;
-int8_t pressB,releaseB;
+float mouse_min=400;  //水平判定しきい値（これを超えるとカーソルが動き出す）
+float accX,accY,accZ; //加速度センサ（重力の方向）の変数
+int8_t joyX,joyY,joyB;//ジョイスティックの入力を受け付ける変数
 
-bool lock=false,pLockButton=false;
+bool lock=false,pLockButton=false;  //ロックボタンの処理
 
+//起動時1回だけ行われる処理
 void setup() {
   M5.begin();
-  M5.Lcd.setRotation(0);
-  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.fillScreen(BLACK); //背景を黒く塗りつぶす
+  M5.MPU6886.Init();        //加速度センサの初期化
+  bleMouse.begin();         //BLEマウスの初期化
+  M5.Lcd.setRotation(1);
   M5.Lcd.setTextSize(2);
-  M5.MPU6886.Init();
-  bleMouse.begin();
+  M5.Lcd.setCursor(0,10);
+  M5.Lcd.setTextColor(0x1C7F);
+  M5.Lcd.println(" Bluetooth");
+  M5.Lcd.setTextColor(0xFC40);
+  M5.Lcd.println(" Connecting");
+  //Bluetoothの受付開始
   while(!bleMouse.isConnected()){
     delay(100);
   }
-  
+  M5.Lcd.setRotation(0);
+
+  //ジョイスティックとの接続開始
   Wire.begin(0, 26, 100000);
 
+  //少電力設定開始
   M5.Axp.ScreenBreath(10);
   M5.Lcd.setSwapBytes(true);
   canvas.createSprite(M5.Lcd.width(),M5.Lcd.height());
